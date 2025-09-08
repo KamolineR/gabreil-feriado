@@ -10,6 +10,10 @@ app.get('/feriados', (req, res) =>{
     res.json(feriados)
 })
 
-// 2. buscar feriado por nome
+// 2. buscar feriado por nome -> /feriado/nome/Nataç
+
+app.get('/feriado/nome/:nome', (req, res) =>{
+    
+})
 
 app.listen(3000, ()=>console.log("rodandoooooo......."))
