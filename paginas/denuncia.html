@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, inicial-scale=1.0">
+        <link rel="stylesheet" href="../style/style.css">
+        <title>Reclamação</title>
+    </head>
+    <body>
+        <div>
+            <h3>O Projeto Verde Online oferece essa ferramenta para que os usuários possam comunicar para nós relatos de acumulação de lixo pela cidade. Abaixo estará um campo para que você possa mandar seu relato para nós.</h3><br>
+            
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required><br><br>
+
+            <label for="descricao">Abaixo você fará uma descrição do que encontrou(COLOQUE A LOCALIZAÇÃO):</label><br>
+
+            <textarea id="descricao" name="descricao" rows="4" cols="50" required></textarea><br><br>
+
+            <label for="data">Data:</label>
+            <input type="date" id="data" name="data" required><br><br>
+
+            <label for="myfile">Coloque uma imagem(opcional):</label>
+            <input type="file" id="img" name="img"><br><br>
+
+            <label for="mapa">Selecione a localização no mapa(obrigatório):</label><br>
+           
+            <div id="map">
+            <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC_IXmk2BaVnzuHkG_wjRmDrDFFLLWYk-I&callback=initMap" async defer></script>
+            <script>
+                function initMap() {
+                    const localizacao = { lat:-23.411932485122207, lng: -51.93567386169237};
+
+                    const map = new google.maps.Map(document.getElementById("map"), {
+                        zoom: 12,
+                        center: localizacao,
+                    });
+
+                    const marcador = new google.maps.Marker({
+                        position: localizacao,
+                        map: map,
+                        title: "Gastão Vidigal"
+                    })
+                }
+            </script>
+            </div><br>
+
+            <input type="submit" value="Enviar">
+            <button class="button" type="button" onclick="document.location='index.html'">Voltar</button>
+        </div>
+        <script>
+            document.getElementById('formDenuncia').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                 const descricao = document.getElementById('descricao').value;
+                 const data = document.getElementById('data').value;
+                 const endereco = document.getElementById('endereco').value;
+
+                 const response = await fetch('http://localhost:3000/denuncias', {
+                     method: 'POST',
+                    headers: {'Content-Type': 'application/json', },
+                    body: JSON.stringify({ descricao, data, endereco })
+                });
+            })
+        </script>
+
+    </body>
