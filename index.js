@@ -3,7 +3,6 @@ const fs = require('fs') // leitura de arquivo
 const app = express()
 
 const DATA_FILE = './feriados.json';
-
 function toISO(d) {
     return new Date(d).toISOString().slice(0, 10); // garante YYYY-MM-DD
 }
