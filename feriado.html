@@ -52,6 +52,47 @@
     <p style="text-align:center;font-weight:bold;">{{ mensagem }}</p>
   </div>
   <script>
+    const app = Vue.createApp({
+      data(){
+        return{
+          feriados: [],
+          novoNome: '',
+          novaData: '',
+          buscaNome: '',
+          resultadoBusca: null,
+          proximo: null,
+          mensagem: '',
+          editando: null
+        }
+      },
+      methods:{
+        async listarFeriados(){
+          const res = await fetch('/Feriados');
+          const dados = await res.json();
+          this.feriados = dados.feriados || [];
+        },
+        async cadastrarFeriado(){
+          if (!this.novoNome || this.novaData){
+            this.mensagem = 'Preencha nome e data';
+            return;
+          }
+          const res = await fetch('/cadastroFeriado', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({nome: this.novoNome, data: this.novaData})
+          });
+          const dados = await res.json();
+          if(res.ok){
+            this.mensagem = 'cadastro com sucesso';
+            this.novoNome = '';
+            this.novaData = '';
+            this.listarFeriados();
+          }else{
+            this.mensagem = `${dados.error || 'erro ao cadastrar'}`
+          }
+        }
+      }
+    })
   </script>
 </body>
 </html>
