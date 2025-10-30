@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistema de Feriados</title>
+  <script src="https://unpkg.com/vue@3"></script>
+  <style>
+    body { background: #f6f8fa; font-family: Arial, sans-serif; }
+    .container { max-width: 800px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1, h2 { text-align: center; }
+    input, button { margin: 5px; padding: 6px 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1>Sistema de Feriados</h1>
+
+    <h2>Cadastrar</h2>
+    <input v-model="novoNome" placeholder="Nome do feriado">
+    <input v-model="novaData" type="date">
+    <button @click="cadastrarFeriado">Cadastrar</button>
+
+    <h2>Buscar por nome</h2>
+    <input v-model="buscarNome" placeholder="Digite o nome">
+    <button @click="buscarPorNome">Buscar</button>
+      <!-- Exibe lista de resultados -->
+    <div v-if="resultadoBusca && resultadoBusca.length">
+      <table style="width:100%;margin-top:10px;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="border-bottom:1px solid #ccc;">Data</th>
+            <th style="border-bottom:1px solid #ccc;">Nome</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="f in resultadoBusca" :key="f.id">
+            <td>{{ f.data }}</td>
+            <td>{{ f.nome }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Exibe mensagem caso não encontre -->
+    <p v-else style="color:#555;">{{ mensagem }}</p>
+
+    <h2>Próximo feriado</h2>
+    <button @click="buscarProximo">Ver próximo</button>
+    <p v-if="proximo">{{ proximo.nome }} - {{ proximo.data }} (faltam {{ proximo.dias }} dias)</p>
+
+    <h2>Todos os feriados</h2>
+    <button @click="listarFeriados">Atualizar lista</button>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Nome</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        <tr v-for="f in feriados" :key="f.id">
+          <td>{{ f.data }}</td>
+          <td><input v-if="editando===f.id" v-model="f.nome"><span v-else>{{ f.nome }}</span></td>
+          <td>
+            <button v-if="editando!==f.id" @click="editando=f.id">Editar</button>
+            <button v-else @click="salvarEdicao(f)">Salvar</button>
+            <button @click="deletarFeriado(f.data)">Excluir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="text-align:center;font-weight:bold;">{{ mensagem }}</p>
+  </div>
+  <script>
+const app = Vue.createApp({
+  data() {
+    return {
+      feriados: [],
+      novoNome: '',
+      novaData: '',
+      buscarNome: '',
+      resultadoBusca: [],
+      proximo: null,
+      mensagem: '',
+      editando: null
+    };
+  },
+  methods: {
+    async listarFeriados() {
+      const res = await fetch('/feriado/listarFeriados');
+      const dados = await res.json();
+      this.feriados = dados.feriados || [];
+    },
+    async cadastrarFeriado() {
+      if (!this.novoNome || !this.novaData) {
+        this.mensagem = 'Preencha o nome e a data';
+        return;
+      }
+      const res = await fetch('/feriado/cadastroFeriado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: this.novoNome, data: this.novaData })
+      });
+      const dados = await res.json();
+      if (res.ok) {
+        this.mensagem = 'Cadastrado com sucesso!';
+        this.novoNome = '';
+        this.novaData = '';
+        this.listarFeriados();
+      } else {
+        this.mensagem = dados.erro || 'Erro ao cadastrar';
+      }
+    },
+    async buscarPorNome() {
+    try{  
+       const nome = this.buscarNome.trim();
+       if(!nome){
+        this.mensagem = 'Digite um nome para buscar.';
+        this.resultadoBusca = [];
+        return;
+       }
+        const res = await fetch(`/feriado/nome/${encodeURIComponent(nome)}`);
+        const dados = await res.json();
+        if(res.ok){
+          this.resultadoBusca = dados;
+          this.mensagem = '';
+        }else{
+          this.resultadoBusca = [];
+          this.mensagem = dados.erro || 'Feriado não encontrado'
+        }
+      }catch(e){
+        console.error("Erro ao buscar: ", e);
+        this.resultadoBusca = [];
+        this.mensagem = "Erro ao conectar ao servidor"
+      }
+    },
+    async buscarProximo() {
+      const res = await fetch('/feriado/feriado/proximo');
+      const dados = await res.json();
+      this.proximo = dados;
+    },
+    async salvarEdicao(f) {
+      const res = await fetch(`/feriado/feriado/${f.data}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: f.nome })
+      });
+      const dados = await res.json();
+      this.mensagem = res.ok ? 'Atualizado!' : dados.erro;
+      if (res.ok) this.editando = null;
+    },
+    async deletarFeriado(data) {
+      if (!confirm('Deseja excluir este feriado?')) return;
+      const res = await fetch(`/feriado/feriado/${data}`, { method: 'DELETE' });
+      const dados = await res.json();
+      this.mensagem = res.ok ? `Removido: ${dados.removido.nome}` : dados.erro;
+      if (res.ok) this.listarFeriados();
+    }
+  },
+  mounted() {
+    this.listarFeriados();
+  }
+});
+app.mount('#app');
+</script>
+
+</body>
+</html>
+
