@@ -22,9 +22,14 @@ function validarDataParams(req, res, next){
 
 //Rota GET- para mostrar todos os feriados - select * from
 router.get('/listarFeriados', async (req, res) =>{
+  try{
     const feriados = await Feriado.findAll({order:[['data', 'ASC']]});
     res.json({feriados});
-})
+  }catch(e){
+    res.status(500).json({erro: 'Erro ao listar o feriado.', detalhe: String(e)})
+  }
+});
+
 //Buscar por nome(contém)
 router.get('/nome/:nome', async (req, res)=>{
     const nome = (req.params.nome || '').trim();
